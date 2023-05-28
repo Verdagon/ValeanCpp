@@ -3,7 +3,7 @@
 
 #include <utility>
 
-extern size_t vrefCurrentGen;
+extern size_t vrefNextKey;
 
 template<typename T>
 class vowned;
@@ -19,24 +19,24 @@ class vref {
 public:
   vref(vowned<T>* own_) :
     own(own_),
-    rememberedGen(own_->currentGen) {}
+    rememberedKey(own_->currentKey) {}
   ~vref() {}
 
   vref_guard<T> open() {
-    return vref_guard<T>(own, rememberedGen);
+    return vref_guard<T>(own, rememberedKey);
   }
 
 private:
-  size_t rememberedGen;
+  size_t rememberedKey;
   vowned<T>* own;
 };
 
 template<typename T>
 class vref_guard {
 public:
-  vref_guard(vowned<T>* own_, size_t rememberedGen) :
+  vref_guard(vowned<T>* own_, size_t rememberedKey) :
       own(own_) {
-    assert(rememberedGen == own->currentGen);
+    assert(rememberedKey == own->currentKey);
     assert(own->present);
     own->present = false;
   }
@@ -58,7 +58,7 @@ class vowned {
 public:
   vowned(T contents_) :
       present(true),
-      currentGen(vrefCurrentGen++),
+      currentKey(vrefNextKey++),
       contents(std::move(contents_)) {}
   ~vowned() {
   	assert(present);
@@ -73,7 +73,7 @@ private:
   friend class vref_guard<T>;
 
   bool present : 1;
-  size_t currentGen : 63;
+  size_t currentKey : 63;
   T contents;
 };
 
